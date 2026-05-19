@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'tokens-viewer-v2';
+const CACHE_VERSION = 'tokens-viewer-v4';
 
 const SHELL = [
   './',
@@ -14,6 +14,7 @@ const CDN = [
   'https://cdn.jsdelivr.net/npm/marked@15/marked.min.js',
   'https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js',
   'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js',
+  'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github.min.css',
   'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css',
 ];
 
