@@ -97,11 +97,14 @@
       -webkit-font-smoothing: antialiased;
       -webkit-text-size-adjust: 100%;
       text-rendering: optimizeLegibility;
+      scroll-behavior: auto;
     }
     body {
       min-height: 100dvh;
       overflow-x: hidden;
+      overflow-anchor: none;
     }
+    .conversation { overflow-anchor: none; }
     ::selection { background: var(--selection); }
 
     button { font: inherit; color: inherit; }
@@ -456,6 +459,7 @@
       letter-spacing: 0.04em;
     }
     .msg-meta .goto {
+      display: none;
       font-family: var(--font-mono);
       font-size: 13px;
       line-height: 1;
@@ -467,6 +471,7 @@
       transition: color 0.15s;
     }
     .msg-meta .goto:hover { color: var(--accent); }
+    body.searching .msg-meta .goto { display: inline-block; }
 
     /* ---- Thinking blocks (<details>) ---- */
     details.thinking {
@@ -919,6 +924,13 @@
       let highlightObserver = null;
       let dirty = false;
       let suppressScrollSave = false;
+      let userInteracted = false;
+
+      // Any user input before mount finishes should cancel auto-scroll-restore,
+      // so we never yank them away from where they're already looking.
+      ['touchstart', 'wheel', 'keydown', 'pointerdown'].forEach(ev => {
+        window.addEventListener(ev, () => { userInteracted = true; }, { passive: true, once: true, capture: true });
+      });
 
       if (window.marked) {
         marked.setOptions({ gfm: true, breaks: false, mangle: false, headerIds: false });
@@ -1374,6 +1386,7 @@
 
       function applySearch() {
         const q = searchInput.value.trim().toLowerCase();
+        document.body.classList.toggle('searching', !!q);
         const articles = $$('article.msg', conversation);
         let visible = 0;
         for (const el of articles) {
@@ -1502,12 +1515,16 @@
       }, { passive: true });
 
       function restoreInitialScroll(savedScrollY) {
-        suppressScrollSave = true;
         const h = location.hash;
-        let target = null;
-        if (h && /^#msg-\d+$/.test(h)) {
-          target = document.getElementById(h.slice(1));
+        const hasHashTarget = h && /^#msg-\d+$/.test(h);
+        // If the user has already started scrolling/tapping by the time mount
+        // finishes, don't yank them — only honour an explicit hash target.
+        if (userInteracted && !hasHashTarget) {
+          updateJumpButton();
+          return;
         }
+        suppressScrollSave = true;
+        let target = hasHashTarget ? document.getElementById(h.slice(1)) : null;
         if (target) {
           target.scrollIntoView({ block: 'start' });
         } else if (typeof savedScrollY === 'number' && savedScrollY > 0) {
