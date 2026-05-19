@@ -102,9 +102,7 @@
     body {
       min-height: 100dvh;
       overflow-x: hidden;
-      overflow-anchor: none;
     }
-    .conversation { overflow-anchor: none; }
     ::selection { background: var(--selection); }
 
     button { font: inherit; color: inherit; }
@@ -1402,6 +1400,12 @@
         }
         if (q) {
           countEl.textContent = `${visible}/${articles.length}`;
+          const firstMatch = conversation.querySelector('article.msg:not(.hidden)');
+          if (firstMatch) {
+            suppressScrollSave = true;
+            firstMatch.scrollIntoView({ block: 'start' });
+            setTimeout(() => { suppressScrollSave = false; }, 200);
+          }
         } else {
           countEl.textContent = `${articles.length}`;
         }
