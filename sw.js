@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'tokens-viewer-v1';
+const CACHE_VERSION = 'tokens-viewer-v2';
 
 const SHELL = [
   './',

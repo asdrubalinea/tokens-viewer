@@ -202,7 +202,8 @@
     main {
       max-width: 1100px;
       margin: 0 auto;
-      padding: 32px 20px 80px;
+      padding: 32px 20px;
+      padding-bottom: max(80px, calc(env(safe-area-inset-bottom) + 60px));
     }
     body.dragging::after {
       content: "Drop conversation file here";
@@ -497,18 +498,242 @@
       border-radius: 6px;
     }
 
+    /* ---- Filter chips ---- */
+    .chips {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .chip {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-dimmer);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 5px 11px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .chip:hover { color: var(--text-dim); border-color: var(--text-dimmer); }
+    .chip.active {
+      color: var(--bg);
+      background: var(--text-dim);
+      border-color: var(--text-dim);
+    }
+    .chip[data-filter="user"].active { background: var(--user); border-color: var(--user); }
+    .chip[data-filter="model"].active { background: var(--model); border-color: var(--model); }
+    .chip[data-filter="thinking"].active { background: var(--thinking); border-color: var(--thinking); color: var(--text); }
+
+    body.hide-user   .msg.is-user:not(.msg-thinking) { display: none !important; }
+    body.hide-model  .msg.is-model:not(.msg-thinking) { display: none !important; }
+    body.hide-thinking .msg.msg-thinking { display: none !important; }
+
+    /* ---- Floating jump button ---- */
+    .jump-btn {
+      position: fixed;
+      right: max(16px, env(safe-area-inset-right));
+      bottom: max(16px, calc(env(safe-area-inset-bottom) + 12px));
+      z-index: 60;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: color-mix(in oklab, var(--surface) 90%, transparent);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      color: var(--text-dim);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+      transition: opacity 0.18s, transform 0.18s, color 0.15s, border-color 0.15s;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+    .jump-btn.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .jump-btn:hover { color: var(--user); border-color: var(--user); }
+    .jump-btn svg {
+      width: 18px;
+      height: 18px;
+      transition: transform 0.25s;
+    }
+    .jump-btn.up svg { transform: rotate(180deg); }
+
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: max(28px, calc(env(safe-area-inset-bottom) + 16px));
+      transform: translate(-50%, 12px);
+      z-index: 80;
+      padding: 9px 16px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    /* ---- Message actions ---- */
+    .msg-actions {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .msg:hover > .msg-actions,
+    .msg.is-editing > .msg-actions { opacity: 1; }
+    .msg.msg-thinking:not(.is-open):not(.is-editing) > .msg-actions { display: none; }
+    .msg-action {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-dimmer);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .msg-action:hover { color: var(--text); border-color: var(--text-dimmer); }
+    .msg-action.danger:hover { color: #f47272; border-color: #f47272; }
+
+    .msg-meta time {
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    .msg-meta time:hover { color: var(--text-dim); }
+    .msg-meta .goto {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-dimmer);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 2px 9px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .msg-meta .goto:hover { color: var(--user); border-color: var(--user); }
+
+    @keyframes msgFlash {
+      0%   { box-shadow: 0 0 0 2px var(--user), 0 0 24px color-mix(in oklab, var(--user) 60%, transparent); }
+      100% { box-shadow: 0 0 0 0 transparent, 0 0 0 transparent; }
+    }
+    .msg.flash { animation: msgFlash 1.6s ease-out 1; }
+
+    /* ---- Edit mode ---- */
+    .msg.is-editing {
+      border-color: var(--user) !important;
+      box-shadow: 0 0 0 1px var(--user);
+    }
+    .msg-editor {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .msg-editor textarea {
+      width: 100%;
+      min-height: 140px;
+      padding: 12px 14px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .msg-editor textarea:focus { border-color: var(--user); }
+    .msg-editor-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+    .msg-editor-actions button {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .msg-editor-actions .save {
+      color: var(--bg);
+      background: var(--user);
+      border: 1px solid var(--user);
+    }
+    .msg-editor-actions .save:hover { filter: brightness(1.1); }
+    .msg-editor-actions .cancel {
+      color: var(--text-dim);
+      background: transparent;
+      border: 1px solid var(--border);
+    }
+    .msg-editor-actions .cancel:hover { color: var(--text); border-color: var(--text-dimmer); }
+
+    /* ---- Dirty indicator ---- */
+    .file-btn.dirty::after {
+      content: "";
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--user);
+      margin-left: 4px;
+      box-shadow: 0 0 6px var(--user);
+    }
+
     /* Mobile tweaks */
     @media (max-width: 640px) {
       :root { --col-width: 100%; }
-      .topbar { padding: 10px 14px; }
+      .topbar {
+        padding-top: max(10px, env(safe-area-inset-top));
+        padding-right: 14px;
+        padding-bottom: 10px;
+        padding-left: 14px;
+      }
       .topbar-row { gap: 10px; }
       .brand { font-size: 17px; }
       .brand small { display: none; }
       .stats { display: none; }
-      main { padding: 20px 14px 60px; }
+      main {
+        padding: 20px 14px;
+        padding-bottom: max(80px, calc(env(safe-area-inset-bottom) + 60px));
+      }
       .msg { padding: 16px 18px; }
       .prose { font-size: 16px; line-height: 1.65; }
       .conversation { gap: 20px; }
+      .msg-actions { opacity: 1 !important; }
     }
   </style>
 </head>
@@ -525,9 +750,16 @@
         <div id="header-info" hidden>
           <span class="stats"><strong id="count">0</strong> msgs · <strong id="total-tokens">0</strong> tokens</span>
         </div>
+        <div id="chips" class="chips" hidden>
+          <button class="chip active" data-filter="all" type="button">All</button>
+          <button class="chip" data-filter="user" type="button">You</button>
+          <button class="chip" data-filter="model" type="button">Model</button>
+          <button class="chip" data-filter="thinking" type="button">Thinking</button>
+        </div>
         <div class="search-wrap">
           <input id="search" type="search" placeholder="Search…" autocomplete="off" spellcheck="false" />
         </div>
+        <button id="export-btn" class="file-btn" type="button" hidden title="Export edited conversation">Export</button>
         <label class="file-btn">
           Open
           <input id="file-input" type="file" accept=".json,application/json,*" />
@@ -551,6 +783,14 @@
     <section id="conversation" class="conversation"></section>
   </main>
 
+  <button id="jump-btn" class="jump-btn" type="button" aria-label="Jump to bottom">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="6 9 12 15 18 9"></polyline>
+    </svg>
+  </button>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
   <script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
@@ -568,9 +808,18 @@
       const totalTokensEl = $('#total-tokens');
       const headerInfo = $('#header-info');
       const emptyState = $('#empty-state');
+      const chipsEl = $('#chips');
+      const exportBtn = $('#export-btn');
+      const jumpBtn = $('#jump-btn');
+      const toastEl = $('#toast');
 
       let allChunks = [];
+      let originalData = null;
+      let currentName = 'conversation.json';
+      let currentHash = null;
       let highlightObserver = null;
+      let dirty = false;
+      let suppressScrollSave = false;
 
       if (window.marked) {
         marked.setOptions({ gfm: true, breaks: false, mangle: false, headerIds: false });
@@ -582,45 +831,89 @@
         });
       }
 
+      /* ---------- IndexedDB ---------- */
+      const DB_NAME = 'tokens-viewer';
+      const DB_VERSION = 1;
+      let dbPromise = null;
+      function openDB() {
+        if (dbPromise) return dbPromise;
+        dbPromise = new Promise((resolve, reject) => {
+          if (!('indexedDB' in window)) return reject(new Error('No IndexedDB'));
+          const req = indexedDB.open(DB_NAME, DB_VERSION);
+          req.onupgradeneeded = () => {
+            const db = req.result;
+            if (!db.objectStoreNames.contains('last')) db.createObjectStore('last', { keyPath: 'id' });
+            if (!db.objectStoreNames.contains('scroll')) db.createObjectStore('scroll', { keyPath: 'key' });
+            if (!db.objectStoreNames.contains('edits')) db.createObjectStore('edits', { keyPath: 'key' });
+          };
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+        return dbPromise;
+      }
+      async function dbGet(store, key) {
+        try {
+          const db = await openDB();
+          return await new Promise((resolve, reject) => {
+            const tx = db.transaction(store, 'readonly');
+            const req = tx.objectStore(store).get(key);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+          });
+        } catch (_) { return null; }
+      }
+      async function dbPut(store, value) {
+        try {
+          const db = await openDB();
+          await new Promise((resolve, reject) => {
+            const tx = db.transaction(store, 'readwrite');
+            tx.objectStore(store).put(value);
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+          });
+        } catch (_) { /* ignore */ }
+      }
+
+      /* ---------- File hash (FNV-1a) ---------- */
+      function fnv1a(str) {
+        let h = 0x811c9dc5;
+        for (let i = 0; i < str.length; i++) {
+          h ^= str.charCodeAt(i);
+          h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+        }
+        return h.toString(16).padStart(8, '0');
+      }
+      function fileHash(name, text) {
+        const probe = text.length > 4096 ? text.slice(0, 4096) : text;
+        return fnv1a(name + ':' + text.length + ':' + probe);
+      }
+
+      /* ---------- File loading ---------- */
       fileInput.addEventListener('change', (e) => {
         const f = e.target.files[0];
-        if (f) loadFile(f);
+        if (f) loadFromFile(f);
       });
       secondaryInput?.addEventListener('change', (e) => {
         const f = e.target.files[0];
-        if (f) loadFile(f);
+        if (f) loadFromFile(f);
       });
 
-      let dragCounter = 0;
-      window.addEventListener('dragenter', (e) => {
-        e.preventDefault();
-        dragCounter++;
-        document.body.classList.add('dragging');
-      });
-      window.addEventListener('dragleave', (e) => {
-        e.preventDefault();
-        dragCounter--;
-        if (dragCounter <= 0) {
-          dragCounter = 0;
-          document.body.classList.remove('dragging');
-        }
-      });
-      window.addEventListener('dragover', (e) => { e.preventDefault(); });
-      window.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dragCounter = 0;
-        document.body.classList.remove('dragging');
-        const f = e.dataTransfer?.files?.[0];
-        if (f) loadFile(f);
-      });
-
-      async function loadFile(file) {
-        if (highlightObserver) { highlightObserver.disconnect(); highlightObserver = null; }
+      async function loadFromFile(file) {
         try {
           showProgress(0.02, 'Reading file…');
           await raf();
           const text = await file.text();
+          await loadFromText(text, file.name || 'conversation.json', { persist: true });
+        } catch (err) {
+          hideProgress();
+          console.error(err);
+          alert('Could not load file:\n' + err.message);
+        }
+      }
 
+      async function loadFromText(text, name, { persist = true } = {}) {
+        if (highlightObserver) { highlightObserver.disconnect(); highlightObserver = null; }
+        try {
           showProgress(0.12, 'Parsing JSON…');
           await raf();
           const data = JSON.parse(text);
@@ -633,19 +926,49 @@
           await raf();
           const normalized = rawChunks.map((c, i) => normalize(c, i));
 
+          const hash = fileHash(name, text);
+          const savedEdits = await dbGet('edits', hash);
+          if (savedEdits && savedEdits.edits) {
+            for (const c of normalized) {
+              const e = savedEdits.edits[c.idx];
+              if (!e) continue;
+              if (e.deleted) c.deleted = true;
+              if (typeof e.text === 'string') {
+                c.text = e.text;
+                c.normText = c.text.toLowerCase();
+              }
+            }
+          }
+
           await preparseMarkdown(normalized);
 
           showProgress(0.97, 'Mounting…');
           await raf();
           allChunks = normalized;
+          originalData = data;
+          currentName = name;
+          currentHash = hash;
+          dirty = !!(savedEdits && savedEdits.edits && Object.keys(savedEdits.edits).length);
+
           mountConversation(allChunks);
           updateHeader();
           searchInput.value = '';
+          applyFiltersFromStorage();
+          updateDirtyUI();
           hideProgress();
+
+          if (persist) {
+            dbPut('last', { id: 'current', name, text, savedAt: Date.now() });
+          }
+
+          const savedScroll = await dbGet('scroll', hash);
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            restoreInitialScroll(savedScroll && savedScroll.scrollY);
+          }));
         } catch (err) {
           hideProgress();
           console.error(err);
-          alert('Could not load file:\n' + err.message);
+          alert('Could not load:\n' + err.message);
         }
       }
 
@@ -667,12 +990,14 @@
           role,
           kind,
           text,
+          originalText: text,
           html: '',
           normText: text.toLowerCase(),
           tokens: c.tokenCount || 0,
           createTime: c.createTime || null,
           driveImageId: c.driveImage?.id || null,
           finishReason: c.finishReason || null,
+          deleted: false,
         };
       }
 
@@ -681,28 +1006,33 @@
         const batchSize = 30;
         for (let i = 0; i < total; i += batchSize) {
           const end = Math.min(i + batchSize, total);
-          for (let j = i; j < end; j++) {
-            const c = chunks[j];
-            if (c.kind === 'message' || c.kind === 'thinking') {
-              try {
-                c.html = DOMPurify.sanitize(marked.parse(c.text || ''));
-              } catch (e) {
-                c.html = DOMPurify.sanitize(`<p>${escapeHtml(c.text || '')}</p>`);
-              }
-            }
-          }
+          for (let j = i; j < end; j++) renderChunkHtml(chunks[j]);
           const ratio = 0.2 + 0.75 * (end / total);
           showProgress(ratio, `Rendering markdown · ${end}/${total}`);
           await raf();
         }
       }
 
+      function renderChunkHtml(c) {
+        if (c.kind !== 'message' && c.kind !== 'thinking') return;
+        try {
+          c.html = DOMPurify.sanitize(marked.parse(c.text || ''));
+        } catch (_) {
+          c.html = DOMPurify.sanitize(`<p>${escapeHtml(c.text || '')}</p>`);
+        }
+      }
+
       function mountConversation(chunks) {
         conversation.innerHTML = '';
         const frag = document.createDocumentFragment();
-        for (const c of chunks) frag.appendChild(renderChunk(c));
+        for (const c of chunks) {
+          if (c.deleted) continue;
+          frag.appendChild(renderChunk(c));
+        }
         conversation.appendChild(frag);
         emptyState.hidden = true;
+        chipsEl.hidden = false;
+        exportBtn.hidden = false;
         setupSyntaxHighlighting();
       }
 
@@ -710,12 +1040,14 @@
         const art = document.createElement('article');
         art.className = `msg msg-${c.kind} ${c.role === 'user' ? 'is-user' : 'is-model'}`;
         art.dataset.idx = c.idx;
+        art.id = `msg-${c.idx}`;
 
         if (c.kind === 'drive-image') {
           const span = document.createElement('span');
           span.className = 'drive-badge';
           span.innerHTML = `<span aria-hidden="true">📎</span> Drive image · <span style="font-family:var(--font-mono);">${escapeHtml(c.driveImageId || '')}</span>`;
           art.appendChild(span);
+          appendActions(art, c);
           return art;
         }
 
@@ -734,15 +1066,19 @@
           body.className = 'msg-body thinking-body prose';
           body.innerHTML = c.html;
           art.appendChild(body);
+          appendActions(art, c);
           return art;
         }
 
         const meta = document.createElement('header');
         meta.className = 'msg-meta';
         const roleLabel = c.role === 'user' ? 'You' : 'Model';
+        const timeContent = c.createTime ? formatTime(c.createTime) : '#' + c.idx;
+        const timeAttr = c.createTime ? ` datetime="${escapeHtml(c.createTime)}"` : '';
         meta.innerHTML = `
           <span class="role">${roleLabel}</span>
-          ${c.createTime ? `<time datetime="${escapeHtml(c.createTime)}">${formatTime(c.createTime)}</time>` : ''}
+          <time${timeAttr} data-idx="${c.idx}" title="Copy link to this message">${timeContent}</time>
+          <button class="goto" data-goto="${c.idx}" type="button" title="Jump to this message in context">Go</button>
           ${c.tokens ? `<span class="tok">${c.tokens.toLocaleString()} tok</span>` : ''}
         `;
         art.appendChild(meta);
@@ -750,7 +1086,130 @@
         body.className = 'msg-body prose';
         body.innerHTML = c.html;
         art.appendChild(body);
+        appendActions(art, c);
         return art;
+      }
+
+      function appendActions(art, c) {
+        if (c.kind === 'drive-image') return;
+        const actions = document.createElement('div');
+        actions.className = 'msg-actions';
+        const editBtn = document.createElement('button');
+        editBtn.className = 'msg-action';
+        editBtn.type = 'button';
+        editBtn.textContent = 'Edit';
+        editBtn.addEventListener('click', (e) => { e.stopPropagation(); enterEditMode(art, c); });
+        const delBtn = document.createElement('button');
+        delBtn.className = 'msg-action danger';
+        delBtn.type = 'button';
+        delBtn.textContent = 'Delete';
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (confirm('Delete this message? Re-load the original file to restore it.')) {
+            deleteMessage(c, art);
+          }
+        });
+        actions.appendChild(editBtn);
+        actions.appendChild(delBtn);
+        art.appendChild(actions);
+      }
+
+      function enterEditMode(art, c) {
+        if (art.classList.contains('is-editing')) return;
+        art.classList.add('is-editing');
+        if (c.kind === 'thinking') art.classList.add('is-open');
+
+        const body = art.querySelector('.msg-body');
+        const prevHTML = body ? body.innerHTML : '';
+        const prevClass = body ? body.className : (c.kind === 'thinking' ? 'msg-body thinking-body prose' : 'msg-body prose');
+
+        const editor = document.createElement('div');
+        editor.className = 'msg-editor';
+        const ta = document.createElement('textarea');
+        ta.value = c.text;
+        ta.spellcheck = false;
+        const autosize = () => {
+          ta.style.height = '';
+          ta.style.height = Math.min(800, Math.max(140, ta.scrollHeight + 4)) + 'px';
+        };
+        ta.addEventListener('input', autosize);
+
+        const actionsRow = document.createElement('div');
+        actionsRow.className = 'msg-editor-actions';
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'cancel';
+        cancelBtn.type = 'button';
+        cancelBtn.textContent = 'Cancel';
+        const saveBtn = document.createElement('button');
+        saveBtn.className = 'save';
+        saveBtn.type = 'button';
+        saveBtn.textContent = 'Save';
+        actionsRow.appendChild(cancelBtn);
+        actionsRow.appendChild(saveBtn);
+
+        editor.appendChild(ta);
+        editor.appendChild(actionsRow);
+        if (body) body.replaceWith(editor);
+
+        requestAnimationFrame(() => { autosize(); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); });
+
+        const leaveEditing = () => art.classList.remove('is-editing');
+
+        cancelBtn.addEventListener('click', () => {
+          const restored = document.createElement('div');
+          restored.className = prevClass;
+          restored.innerHTML = prevHTML;
+          editor.replaceWith(restored);
+          leaveEditing();
+        });
+
+        saveBtn.addEventListener('click', () => {
+          c.text = ta.value;
+          c.normText = c.text.toLowerCase();
+          renderChunkHtml(c);
+          const newBody = document.createElement('div');
+          newBody.className = prevClass;
+          newBody.innerHTML = c.html;
+          editor.replaceWith(newBody);
+          newBody.querySelectorAll('pre code:not([data-highlighted])').forEach(el => {
+            try { if (window.hljs) { hljs.highlightElement(el); el.dataset.highlighted = '1'; } } catch (_) {}
+          });
+          leaveEditing();
+          markDirty();
+          persistEdits();
+        });
+
+        ta.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') { e.preventDefault(); cancelBtn.click(); }
+          else if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); saveBtn.click(); }
+        });
+      }
+
+      function deleteMessage(c, art) {
+        c.deleted = true;
+        art.remove();
+        updateHeader();
+        markDirty();
+        persistEdits();
+      }
+
+      function markDirty() {
+        dirty = true;
+        updateDirtyUI();
+      }
+      function updateDirtyUI() {
+        exportBtn.classList.toggle('dirty', dirty);
+        exportBtn.title = dirty ? 'Export edited conversation (unsaved edits)' : 'Export conversation';
+      }
+
+      async function persistEdits() {
+        if (!currentHash) return;
+        const edits = {};
+        for (const c of allChunks) {
+          if (c.deleted) edits[c.idx] = { deleted: true };
+          else if (c.text !== c.originalText) edits[c.idx] = { text: c.text };
+        }
+        await dbPut('edits', { key: currentHash, edits, savedAt: Date.now() });
       }
 
       function setupSyntaxHighlighting() {
@@ -798,12 +1257,287 @@
 
       function updateHeader() {
         headerInfo.hidden = false;
-        const total = allChunks.length;
-        const totalTokens = allChunks.reduce((s, c) => s + (c.tokens || 0), 0);
-        countEl.textContent = total.toLocaleString();
-        totalTokensEl.textContent = totalTokens.toLocaleString();
+        const live = allChunks.filter(c => !c.deleted);
+        countEl.textContent = live.length.toLocaleString();
+        totalTokensEl.textContent = live.reduce((s, c) => s + (c.tokens || 0), 0).toLocaleString();
       }
 
+      /* ---------- Filter chips ---------- */
+      const FILTERS_KEY = 'tv.filters';
+      function applyFiltersFromStorage() {
+        let saved = {};
+        try { saved = JSON.parse(localStorage.getItem(FILTERS_KEY) || '{}'); } catch (_) {}
+        document.body.classList.toggle('hide-user', !!saved.hideUser);
+        document.body.classList.toggle('hide-model', !!saved.hideModel);
+        document.body.classList.toggle('hide-thinking', !!saved.hideThinking);
+        refreshChipStates();
+      }
+      function refreshChipStates() {
+        const b = document.body.classList;
+        const noFilter = !b.contains('hide-user') && !b.contains('hide-model') && !b.contains('hide-thinking');
+        chipsEl.querySelector('[data-filter="all"]').classList.toggle('active', noFilter);
+        chipsEl.querySelector('[data-filter="user"]').classList.toggle('active', !b.contains('hide-user'));
+        chipsEl.querySelector('[data-filter="model"]').classList.toggle('active', !b.contains('hide-model'));
+        chipsEl.querySelector('[data-filter="thinking"]').classList.toggle('active', !b.contains('hide-thinking'));
+      }
+      function persistFilters() {
+        const b = document.body.classList;
+        try {
+          localStorage.setItem(FILTERS_KEY, JSON.stringify({
+            hideUser: b.contains('hide-user'),
+            hideModel: b.contains('hide-model'),
+            hideThinking: b.contains('hide-thinking'),
+          }));
+        } catch (_) {}
+      }
+      chipsEl.addEventListener('click', (e) => {
+        const btn = e.target.closest('.chip');
+        if (!btn) return;
+        const f = btn.dataset.filter;
+        const b = document.body.classList;
+        if (f === 'all') {
+          b.remove('hide-user', 'hide-model', 'hide-thinking');
+        } else if (f === 'user') {
+          b.toggle('hide-user');
+        } else if (f === 'model') {
+          b.toggle('hide-model');
+        } else if (f === 'thinking') {
+          b.toggle('hide-thinking');
+        }
+        refreshChipStates();
+        persistFilters();
+      });
+      applyFiltersFromStorage();
+
+      /* ---------- Drag/drop ---------- */
+      let dragCounter = 0;
+      window.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        dragCounter++;
+        document.body.classList.add('dragging');
+      });
+      window.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dragCounter--;
+        if (dragCounter <= 0) {
+          dragCounter = 0;
+          document.body.classList.remove('dragging');
+        }
+      });
+      window.addEventListener('dragover', (e) => { e.preventDefault(); });
+      window.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dragCounter = 0;
+        document.body.classList.remove('dragging');
+        const f = e.dataTransfer?.files?.[0];
+        if (f) loadFromFile(f);
+      });
+
+      /* ---------- Jump button + scroll memory ---------- */
+      function updateJumpButton() {
+        const doc = document.documentElement;
+        const scrollTop = window.scrollY || doc.scrollTop;
+        const max = doc.scrollHeight - window.innerHeight;
+        jumpBtn.classList.toggle('visible', max > 600);
+        const past = scrollTop > max / 2;
+        jumpBtn.classList.toggle('up', past);
+        jumpBtn.setAttribute('aria-label', past ? 'Jump to top' : 'Jump to bottom');
+      }
+      jumpBtn.addEventListener('click', () => {
+        const doc = document.documentElement;
+        const scrollTop = window.scrollY || doc.scrollTop;
+        const max = doc.scrollHeight - window.innerHeight;
+        const past = scrollTop > max / 2;
+        window.scrollTo({ top: past ? 0 : doc.scrollHeight, behavior: 'smooth' });
+      });
+
+      let scrollSaveTimer = null;
+      window.addEventListener('scroll', () => {
+        updateJumpButton();
+        if (suppressScrollSave || !currentHash) return;
+        clearTimeout(scrollSaveTimer);
+        scrollSaveTimer = setTimeout(() => {
+          dbPut('scroll', { key: currentHash, scrollY: window.scrollY, savedAt: Date.now() });
+        }, 250);
+      }, { passive: true });
+
+      function restoreInitialScroll(savedScrollY) {
+        suppressScrollSave = true;
+        const h = location.hash;
+        let target = null;
+        if (h && /^#msg-\d+$/.test(h)) {
+          target = document.getElementById(h.slice(1));
+        }
+        if (target) {
+          target.scrollIntoView({ block: 'start' });
+        } else if (typeof savedScrollY === 'number' && savedScrollY > 0) {
+          window.scrollTo(0, savedScrollY);
+        } else {
+          window.scrollTo(0, document.documentElement.scrollHeight);
+        }
+        setTimeout(() => { suppressScrollSave = false; updateJumpButton(); }, 200);
+      }
+
+      window.addEventListener('hashchange', () => {
+        const h = location.hash;
+        if (h && /^#msg-\d+$/.test(h)) {
+          const el = document.getElementById(h.slice(1));
+          if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        }
+      });
+
+      /* ---------- Hash links on timestamps ---------- */
+      conversation.addEventListener('click', (e) => {
+        const go = e.target.closest('button.goto[data-goto]');
+        if (go) {
+          e.stopPropagation();
+          gotoMessage(+go.dataset.goto);
+          return;
+        }
+        const t = e.target.closest('time[data-idx]');
+        if (!t) return;
+        const idx = t.dataset.idx;
+        const url = location.origin + location.pathname + '#msg-' + idx;
+        try {
+          navigator.clipboard.writeText(url);
+          showToast('Link copied');
+        } catch (_) {
+          showToast('Copy failed');
+        }
+        history.replaceState(null, '', '#msg-' + idx);
+      });
+
+      function gotoMessage(idx) {
+        const el = document.getElementById('msg-' + idx);
+        if (!el) return;
+        // Clear search so neighbors become visible
+        if (searchInput.value) {
+          searchInput.value = '';
+          applySearch();
+        }
+        // Wait a frame for layout to settle after un-filtering, then scroll + flash
+        requestAnimationFrame(() => {
+          el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          el.classList.remove('flash');
+          // force reflow so the animation can restart
+          void el.offsetWidth;
+          el.classList.add('flash');
+          setTimeout(() => el.classList.remove('flash'), 1700);
+          history.replaceState(null, '', '#msg-' + idx);
+        });
+      }
+
+      /* ---------- Toast ---------- */
+      let toastTimer = null;
+      function showToast(msg) {
+        toastEl.textContent = msg;
+        toastEl.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1600);
+      }
+
+      /* ---------- Export ---------- */
+      exportBtn.addEventListener('click', () => {
+        if (!originalData) return;
+        try {
+          const exported = structuredClone(originalData);
+          const byIdx = new Map(allChunks.map(c => [c.idx, c]));
+          exported.chunkedPrompt.chunks = originalData.chunkedPrompt.chunks
+            .map((raw, i) => {
+              const c = byIdx.get(i);
+              if (!c || c.deleted) return null;
+              if (c.text === c.originalText) return raw;
+              const next = structuredClone(raw);
+              if (Array.isArray(next.parts) && next.parts.some(p => 'text' in p)) {
+                let placed = false;
+                next.parts = next.parts.map(p => {
+                  if (placed || !('text' in p)) return p;
+                  placed = true;
+                  return { ...p, text: c.text };
+                });
+              } else {
+                next.text = c.text;
+              }
+              return next;
+            })
+            .filter(Boolean);
+
+          const blob = new Blob([JSON.stringify(exported, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          const base = (currentName || 'conversation.json').replace(/\.json$/i, '');
+          a.download = base + '.edited.json';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 4000);
+          dirty = false;
+          updateDirtyUI();
+          showToast('Exported');
+        } catch (err) {
+          console.error(err);
+          alert('Export failed: ' + err.message);
+        }
+      });
+
+      /* ---------- Keyboard shortcuts ---------- */
+      window.addEventListener('keydown', (e) => {
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        const t = e.target;
+        const inField = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+        if (inField) {
+          if (e.key === 'Escape' && t === searchInput) {
+            searchInput.value = '';
+            applySearch();
+            searchInput.blur();
+          }
+          return;
+        }
+        if (e.key === '/') {
+          e.preventDefault();
+          searchInput.focus();
+          searchInput.select();
+        } else if (e.key === 'j') {
+          e.preventDefault();
+          stepMessage(1);
+        } else if (e.key === 'k') {
+          e.preventDefault();
+          stepMessage(-1);
+        } else if (e.key === 'g' && !e.shiftKey) {
+          e.preventDefault();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else if (e.key === 'G' || (e.key === 'g' && e.shiftKey)) {
+          e.preventDefault();
+          window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+        } else if (e.key === 't') {
+          e.preventDefault();
+          toggleAllThinking();
+        }
+      });
+
+      function stepMessage(dir) {
+        const articles = $$('article.msg', conversation)
+          .filter(el => !el.classList.contains('hidden') && window.getComputedStyle(el).display !== 'none');
+        if (!articles.length) return;
+        const slack = 10;
+        if (dir > 0) {
+          const next = articles.find(el => el.getBoundingClientRect().top > slack);
+          (next || articles[articles.length - 1]).scrollIntoView({ block: 'start', behavior: 'smooth' });
+        } else {
+          const above = [...articles].reverse().find(el => el.getBoundingClientRect().top < -slack);
+          (above || articles[0]).scrollIntoView({ block: 'start', behavior: 'smooth' });
+        }
+      }
+
+      function toggleAllThinking() {
+        const ts = $$('.msg.msg-thinking', conversation);
+        if (!ts.length) return;
+        const anyClosed = ts.some(el => !el.classList.contains('is-open'));
+        ts.forEach(el => el.classList.toggle('is-open', anyClosed));
+      }
+
+      /* ---------- Helpers ---------- */
       function showProgress(ratio, label) {
         progressEl.hidden = false;
         progressEl.querySelector('.bar').style.width = (Math.max(0, Math.min(1, ratio)) * 100) + '%';
@@ -829,6 +1563,14 @@
       }
 
       function raf() { return new Promise(r => setTimeout(r, 0)); }
+
+      /* ---------- Auto-restore on boot ---------- */
+      (async () => {
+        const last = await dbGet('last', 'current');
+        if (last && last.text) {
+          await loadFromText(last.text, last.name || 'conversation.json', { persist: false });
+        }
+      })();
     })();
   </script>
 </body>
